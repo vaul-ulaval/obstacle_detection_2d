@@ -39,8 +39,8 @@ python obstacle_detection.py
 ## Où développer?
 
 Chercher les TODOs dans le code. Il y a deux fonctions principales à développer:
-1. La méthode [obstacle_detection](./obstacle_detection.py#L8) qui devrait être le coeur du développement
-2. La fonction pour dessiner un obstacle, la méthode [draw_obstacle](viz.py#L83) pour visualiser vos résultats
+1. La fonction [obstacle_detection](./obstacle_detection.py#L8) qui devrait être le coeur du développement
+2. Pour dessiner un obstacle, la fonction [draw_obstacle](viz.py#L83) pour visualiser vos résultats
 
 ## Pistes de solution
 
