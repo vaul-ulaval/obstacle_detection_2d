@@ -5,7 +5,7 @@ import numpy as np
 from load_data import Map, Pose, Scan, load_map, load_poses, load_scans
 from scipy.spatial.transform import Rotation as R
 
-from obstacle_detection import draw_obstacles, obstacle_detection
+from obstacle_detection import obstacle_detection
 
 def draw_map(map: Map, ax):
     width, height = map.metadata.width, map.metadata.height
@@ -61,7 +61,8 @@ def draw_scan(scan: Scan, pose: Pose, map: Map, ax):
     T_map_to_base_link[:2, 2] = [pose.x, pose.y]
 
     T_laser_to_base_link = np.eye(3)
-    T_laser_to_base_link[:2, 2] = [0.109, 0.0]
+    base_link_to_laser_x = 0.109  # meters
+    T_laser_to_base_link[:2, 2] = [base_link_to_laser_x, 0.0]
 
     ranges = np.array(scan.ranges)
     angles = scan.metadata.angle_min + np.arange(len(ranges)) * scan.metadata.angle_increment
@@ -78,6 +79,16 @@ def draw_scan(scan: Scan, pose: Pose, map: Map, ax):
 
     ax.scatter(points_img[0, :], points_img[1, :], s=1, c="blue")
 
+def draw_obstacles(obstacles, ax):
+    # TODO: Implement obstacle drawing
+    for obs in obstacles:
+        pass
+
+def draw_scene(map: Map, pose: Pose, scan: Scan, obstacles, ax):
+    draw_map(map, ax)
+    draw_pose(pose, map, ax)
+    draw_scan(scan, pose, map, ax)
+    draw_obstacles(obstacles, ax)
 
 if __name__ == "__main__":
     data_folder = Path("blitz_obstacle_detection_extracted")
@@ -93,17 +104,13 @@ if __name__ == "__main__":
 
     def update(frame_idx):
         ax.clear()
-        draw_map(map, ax)
         pose = poses[frame_idx]
         scan = scans[frame_idx]
 
-        draw_pose(pose, map, ax)
-        draw_scan(scan, pose, map, ax)
-
         obstacles = obstacle_detection(map, pose, scan)
-        draw_obstacles(obstacles, ax)
+        draw_scene(map, pose, scan, obstacles, ax)
 
-        ax.set_title(f"Robot playback")
+        ax.set_title(f"Robot playback (frame {frame_idx})")
 
     anim = FuncAnimation(fig, update, frames=frames_to_display, interval=200)  # interval in ms is still fine
     plt.show()
