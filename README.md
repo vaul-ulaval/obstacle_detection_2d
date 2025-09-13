@@ -36,3 +36,8 @@ python obstacle_detection.py
 
 [obstacle_detection.py](./obstacle_detection.py): L'algorithme de détection d'obstacle sera implémenté ici. En exécutant ce script, seulement un frame est affiché afin de pouvoir tester rapidement des algorithmes.
 
+## Pistes de solution
+
+- [Notre solution actuelle en C++](https://github.com/vaul-ulaval/obstacles_detection/blob/main/src/obstacles_detection_lidar.cpp)
+- [Repo de détection d'obstacle en 2D](https://github.com/viam-modules/obstacles-2d-lidar)
+- [Repo de détection d'obstacle en 3D](https://github.com/knaaga/lidar-obstacle-detection)
