@@ -45,5 +45,5 @@ Chercher les TODOs dans le code. Il y a deux fonctions principales à développe
 ## Pistes de solution
 
 - [Notre solution actuelle en C++](https://github.com/vaul-ulaval/obstacles_detection/blob/main/src/obstacles_detection_lidar.cpp)
-- [Repo de détection d'obstacle en 2D](https://github.com/viam-modules/obstacles-2d-lidar)
-- [Repo de détection d'obstacle en 3D](https://github.com/knaaga/lidar-obstacle-detection)
+- [Expemple de solution de détection d'obstacle en 2D](https://github.com/viam-modules/obstacles-2d-lidar)
+- [Exemple de solution de détection d'obstacle en 3D](https://github.com/knaaga/lidar-obstacle-detection)
