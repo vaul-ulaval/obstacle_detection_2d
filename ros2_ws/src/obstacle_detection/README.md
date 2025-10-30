@@ -5,4 +5,4 @@ This package was generated with the following command :
 ros2 pkg create --build-type ament_python obstacle_detection --node-name obstacle_detection
 ```
 
-The node from our existing obstacle detection solution is located [here](./obstacle_detection_lidar.cpp). It can be usefull to see what are the subscribtions and publishers that you will need.
+The node from our existing obstacle detection solution is located [here](./obstacle_detection_lidar.cpp). It can be usefull to see what are the subscribtions and publishers that you will need. I got this file from this [ros2 package](https://github.com/vaul-ulaval/obstacles_detection), you could build it to compare with your solution.
