@@ -2,6 +2,7 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
+import random
 from load_data import Map, Pose, Scan, load_map, load_poses, load_scans
 from scipy.spatial.transform import Rotation as R
 
@@ -79,16 +80,33 @@ def draw_scan(scan: Scan, pose: Pose, map: Map, ax):
 
     ax.scatter(points_img[0, :], points_img[1, :], s=1, c="blue")
 
-def draw_obstacles(obstacles, ax):
-    # TODO: Implement obstacle drawing
+def draw_obstacles(obstacles, map, ax):
+    origin_x, origin_y = map.metadata.origin_x, map.metadata.origin_y
+    resolution = map.metadata.resolution
+
+    T_map_to_img = np.array([
+        [1/resolution, 0, -origin_x/resolution],
+        [0, 1/resolution, -origin_y/resolution],
+        [0, 0, 1]
+    ])
+
     for obs in obstacles:
-        pass
+        if len(obs) == 0:
+            continue
+        color = '#' + hex(random.randrange(0, 2**24))[2:].zfill(6)
+        xs = [coord[0] for coord in obs]
+        ys = [coord[1] for coord in obs]
+
+        pts = np.stack([np.array(xs), np.array(ys), np.ones_like(xs)], axis=0)
+        pts_img = T_map_to_img @ pts
+
+        ax.scatter(pts_img[0, :], pts_img[1, :], color=color)
 
 def draw_scene(map: Map, pose: Pose, scan: Scan, obstacles, ax):
     draw_map(map, ax)
     draw_pose(pose, map, ax)
     draw_scan(scan, pose, map, ax)
-    draw_obstacles(obstacles, ax)
+    draw_obstacles(obstacles, map, ax)
 
 if __name__ == "__main__":
     data_folder = Path("blitz_obstacle_detection_extracted")
