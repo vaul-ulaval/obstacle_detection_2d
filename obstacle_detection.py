@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 from matplotlib import pyplot as plt
 from load_data import Map, Pose, Scan, ScanMetadata, load_map, load_poses, load_scans
+from scipy.ndimage import binary_dilation
 
 
 def obstacle_detection(map: Map, pose: Pose, scan: Scan):
@@ -84,16 +85,24 @@ def world_to_map_indices(map: Map, x: float, y: float):
 
     return row, col
 
-def remove_walls(obstacles, map: Map, enlarge_wall = 4):
+def remove_walls(obstacles, map: Map, wall_thickness = 2):
     for obs in obstacles:
         if len(obs) == 0:
             continue
         
+        walls = (map.grid == 100)
+
+        structure = np.ones((wall_thickness, wall_thickness))
+
+        dilated = binary_dilation(walls, structure=structure)
+
+        thickened_map = np.where(dilated, 100, 0)
+
         for coords in obs:
             x, y = coords[0], coords[1]
             row, col = world_to_map_indices(map, x, y)
 
-            if map.grid[row, col] == 100:
+            if thickened_map[row, col] == 100:
                 obs.clear()
                 break
 
