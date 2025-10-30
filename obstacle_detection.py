@@ -85,7 +85,7 @@ def world_to_map_indices(map: Map, x: float, y: float):
 
     return row, col
 
-def remove_walls(obstacles, map: Map, wall_thickness = 2):
+def remove_walls(obstacles, map: Map, wall_thickness = 10):
     for obs in obstacles:
         if len(obs) == 0:
             continue
