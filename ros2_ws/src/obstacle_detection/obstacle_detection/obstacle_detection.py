@@ -59,6 +59,8 @@ class ObstacleDetection(Node):
         obstacles = self.cluster_obstacles(obstacles)
 
         obstacles = self.remove_walls(obstacles)
+        
+        obstacles = self.clean_obstacles(obstacles)
 
         return obstacles
     
@@ -142,6 +144,13 @@ class ObstacleDetection(Node):
                     obs.clear()
                     break
                 
+        return obstacles
+    
+    def clean_obstacles(self, obstacles, min_size=3):
+        for obs in obstacles:
+            if len(obs) < min_size:
+                obs.clear()
+        
         return obstacles
 
 def main(args=None):
