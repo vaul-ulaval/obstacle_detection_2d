@@ -80,7 +80,7 @@ def draw_scan(scan: Scan, pose: Pose, map: Map, ax):
 
     ax.scatter(points_img[0, :], points_img[1, :], s=1, c="blue")
 
-def draw_obstacles(obstacles, map, ax):
+def draw_obstacles(obstacles, pose: Pose, map: Map, ax):
     origin_x, origin_y = map.metadata.origin_x, map.metadata.origin_y
     resolution = map.metadata.resolution
 
@@ -89,6 +89,10 @@ def draw_obstacles(obstacles, map, ax):
         [0, 1/resolution, -origin_y/resolution],
         [0, 0, 1]
     ])
+    
+    T_laser_to_base_link = np.eye(3)
+    base_link_to_laser_x = 0.109  # meters
+    T_laser_to_base_link[:2, 2] = [base_link_to_laser_x, 0.0]
 
     for obs in obstacles:
         if len(obs) == 0:
@@ -98,7 +102,7 @@ def draw_obstacles(obstacles, map, ax):
         ys = [coord[1] for coord in obs]
 
         pts = np.stack([np.array(xs), np.array(ys), np.ones_like(xs)], axis=0)
-        pts_img = T_map_to_img @ pts
+        pts_img = T_map_to_img @ T_laser_to_base_link @ pts
 
         ax.scatter(pts_img[0, :], pts_img[1, :], color=color)
 
@@ -106,7 +110,7 @@ def draw_scene(map: Map, pose: Pose, scan: Scan, obstacles, ax):
     draw_map(map, ax)
     draw_pose(pose, map, ax)
     draw_scan(scan, pose, map, ax)
-    draw_obstacles(obstacles, map, ax)
+    draw_obstacles(obstacles, pose, map, ax)
 
 if __name__ == "__main__":
     data_folder = Path("blitz_obstacle_detection_extracted")
