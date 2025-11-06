@@ -5,6 +5,8 @@ from matplotlib import pyplot as plt
 from load_data import Map, Pose, Scan, load_map, load_poses, load_scans
 
 
+# NE PLUS TRAVAILLER ICI, C'EST L'ANCIEN FICHIER.
+# UTILISER obstacle_detection.py DANS LE DOSSIER src/obstacle_detection/obstacle_detection A LA PLACE.
 def obstacle_detection(map: Map, pose: Pose, scan: Scan):
     # TODO: Implement obstacle detection algorithm
     MAX_RADIUS = 0.2
