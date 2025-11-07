@@ -6,13 +6,23 @@ from rclpy.node import Node
 from transforms3d.euler import quat2euler
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid, Odometry
+from visualization_msgs.msg import Marker, MarkerArray
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 
 class ObstacleDetection(Node):
     def __init__(self):
         super().__init__("obstacle_detection")
+
+        MAP_QOS = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
+
         self.map_subscription = self.create_subscription(
-            OccupancyGrid, "/map", self.map_callback, 10
+            OccupancyGrid, "/map", self.map_callback, MAP_QOS
         )
 
         self.scan_subscription = message_filters.Subscriber(self, LaserScan, "/scan")
@@ -21,10 +31,14 @@ class ObstacleDetection(Node):
             self, Odometry, "/odometry/filtered"
         )
 
-        ts = message_filters.ApproximateTimeSynchronizer(
-            [self.scan_subscription, self.odometry_subscription], 10, slop=0.1
+        self.markers_pub = self.create_publisher(MarkerArray, "/obstacles_markers", 10)
+
+        self.ts = message_filters.ApproximateTimeSynchronizer(
+            [self.scan_subscription, self.odometry_subscription],
+            queue_size=10,
+            slop=0.1,
         )
-        ts.registerCallback(self.obstacle_detection_callback)
+        self.ts.registerCallback(self.obstacle_detection_callback)
 
     def map_callback(self, msg: OccupancyGrid):
         self.map_metadata = msg.info
@@ -70,6 +84,7 @@ class ObstacleDetection(Node):
 
         obstacles = self.clean_obstacles(obstacles)
 
+        self.publish_markers(obstacles)
         return obstacles
 
     def detect_obstacles(self, reference_coords, max_distance=0.5):
@@ -154,6 +169,42 @@ class ObstacleDetection(Node):
                 obs.clear()
 
         return obstacles
+    
+    def publish_markers(self, obstacles, frame_id="map"):
+        arr = MarkerArray()
+        now = self.get_clock().now().to_msg()
+
+        # Clear
+        m_clear = Marker()
+        m_clear.header.frame_id = frame_id
+        m_clear.header.stamp = now
+        m_clear.ns = "obstacles"
+        m_clear.id = 0
+        m_clear.action = Marker.DELETEALL
+        arr.markers.append(m_clear)
+
+        #  obstacles
+        from geometry_msgs.msg import Point
+        for k, obs in enumerate(obstacles, start=1):  # start=1
+            if not obs:
+                continue
+            m = Marker()
+            m.header.frame_id = frame_id
+            m.header.stamp = now
+            m.ns = "obstacles"
+            m.id = k
+            m.type = Marker.LINE_STRIP
+            m.action = Marker.ADD
+            m.scale.x = 0.02
+            m.color.a = 1.0
+            m.color.r = 1.0
+            m.lifetime.sec = 0
+            m.lifetime.nanosec = 200_000_000
+            m.points = [Point(x=float(x), y=float(y), z=0.0) for (x, y) in obs]
+            arr.markers.append(m)
+
+        self.markers_pub.publish(arr)
+
 
 
 def main(args=None):
