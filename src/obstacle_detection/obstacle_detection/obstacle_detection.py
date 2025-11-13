@@ -7,6 +7,7 @@ from transforms3d.euler import quat2euler
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid, Odometry
 from visualization_msgs.msg import Marker, MarkerArray
+from geometry_msgs.msg import PoseArray, Pose
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 
@@ -33,6 +34,10 @@ class ObstacleDetection(Node):
 
         self.markers_pub = self.create_publisher(MarkerArray, "/obstacles_markers", 10)
 
+        self.obstacle_points_pub = self.create_publisher(
+            PoseArray, "/obstacle_points", 10
+        )
+
         self.ts = message_filters.ApproximateTimeSynchronizer(
             [self.scan_subscription, self.odometry_subscription],
             queue_size=10,
@@ -54,10 +59,9 @@ class ObstacleDetection(Node):
         pose = odom_msg.pose.pose
         ranges = np.array(scan_msg.ranges, dtype=float)
         angles = angle_min + np.arange(ranges.size) * angle_increment
-
         x_r = ranges * np.cos(angles)  # (N,)
         y_r = ranges * np.sin(angles)  # (N,)
-        robot_coords = np.stack((x_r, y_r), axis=1)  # (N,2)
+        scan_points_in_robot_frame = np.vstack([x_r, y_r, np.ones_like(x_r)])  # (N,3)
 
         yaw = quat2euler(
             [
@@ -69,10 +73,12 @@ class ObstacleDetection(Node):
         )[2]
         cos_yaw = np.cos(yaw)
         sin_yaw = np.sin(yaw)
+        
+        print(scan_points_in_robot_frame)
 
-        rotation = np.array([[cos_yaw, -sin_yaw], [sin_yaw, cos_yaw]])  # (2,2)
-        reference_coords = robot_coords @ rotation.T  # (N,2)
-        reference_coords += np.array([pose.position.x, pose.position.y])
+        base_link_to_map_tf = np.array([[cos_yaw, -sin_yaw, pose.position.x], [sin_yaw, cos_yaw, pose.position.y], [0, 0, 1]])  # (3,3)
+        reference_coords = base_link_to_map_tf @ scan_points_in_robot_frame  # (N,3)
+        reference_coords = reference_coords[:2, :].T  # (N,2)
 
         obstacles = self.detect_obstacles(reference_coords)
 
@@ -83,7 +89,9 @@ class ObstacleDetection(Node):
         obstacles = self.clean_obstacles(obstacles)
 
         self.publish_markers(obstacles)
-        
+
+        self.publish_obstacle_points(obstacles)
+
         return obstacles
 
     def detect_obstacles(self, reference_coords, max_distance=0.5):
@@ -168,7 +176,7 @@ class ObstacleDetection(Node):
                 obs.clear()
 
         return obstacles
-    
+
     def publish_markers(self, obstacles, frame_id="map"):
         arr = MarkerArray()
         now = self.get_clock().now().to_msg()
@@ -184,6 +192,7 @@ class ObstacleDetection(Node):
 
         #  obstacles
         from geometry_msgs.msg import Point
+
         for k, obs in enumerate(obstacles, start=1):  # start=1
             if not obs:
                 continue
@@ -204,6 +213,24 @@ class ObstacleDetection(Node):
 
         self.markers_pub.publish(arr)
 
+    def publish_obstacle_points(self, obstacles, frame_id="map"):
+        pose_array = PoseArray()
+        now = self.get_clock().now().to_msg()
+
+        pose_array.header.frame_id = frame_id
+        pose_array.header.stamp = now
+
+        for obs in obstacles:
+            if not obs:
+                continue
+            for x, y in obs:
+                pose = Pose()
+                pose.position.x = x
+                pose.position.y = y
+                pose.position.z = 0.0
+                pose_array.poses.append(pose)
+
+        self.obstacle_points_pub.publish(pose_array)
 
 
 def main(args=None):
@@ -213,9 +240,6 @@ def main(args=None):
 
     rclpy.spin(obstacle_detection)
 
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
     obstacle_detection.destroy_node()
     rclpy.shutdown()
 
