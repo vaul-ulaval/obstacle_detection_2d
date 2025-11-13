@@ -57,9 +57,9 @@ def draw_scan(scan: Scan, pose: Pose, map: Map, ax):
     ])
     
     rot = R.from_euler('z', pose.yaw)
-    T_map_to_base_link = np.eye(3)
-    T_map_to_base_link[:2, :2] = rot.as_matrix()[:2, :2]
-    T_map_to_base_link[:2, 2] = [pose.x, pose.y]
+    T_base_link_to_map = np.eye(3)
+    T_base_link_to_map[:2, :2] = rot.as_matrix()[:2, :2]
+    T_base_link_to_map[:2, 2] = [pose.x, pose.y]
 
     T_laser_to_base_link = np.eye(3)
     base_link_to_laser_x = 0.109  # meters
@@ -76,7 +76,7 @@ def draw_scan(scan: Scan, pose: Pose, map: Map, ax):
 
     points_laser = np.stack([xs_robot, ys_robot, np.ones_like(xs_robot)], axis=0)
 
-    points_img = T_map_to_img @ T_map_to_base_link @ T_laser_to_base_link @ points_laser
+    points_img = T_map_to_img @ T_base_link_to_map @ T_laser_to_base_link @ points_laser
 
     ax.scatter(points_img[0, :], points_img[1, :], s=1, c="blue")
 
