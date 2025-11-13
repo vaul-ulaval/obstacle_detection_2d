@@ -45,12 +45,10 @@ class ObstacleDetection(Node):
         self.map = np.array(msg.data, dtype=np.int8).reshape(
             (msg.info.height, msg.info.width)
         )
-        print("Map received")
 
     def obstacle_detection_callback(self, scan_msg: LaserScan, odom_msg: Odometry):
         if not hasattr(self, "map"):
             return
-        print("Processing scan and odometry messages")
         angle_min = scan_msg.angle_min
         angle_increment = scan_msg.angle_increment
         pose = odom_msg.pose.pose
@@ -85,6 +83,7 @@ class ObstacleDetection(Node):
         obstacles = self.clean_obstacles(obstacles)
 
         self.publish_markers(obstacles)
+        
         return obstacles
 
     def detect_obstacles(self, reference_coords, max_distance=0.5):
