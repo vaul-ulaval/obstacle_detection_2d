@@ -50,6 +50,7 @@ class ObstacleDetection(Node):
         self.map = np.array(msg.data, dtype=np.int8).reshape(
             (msg.info.height, msg.info.width)
         )
+        self.thickened_map = self.get_thickened_map()
 
     def obstacle_detection_callback(self, scan_msg: LaserScan, odom_msg: Odometry):
         if not hasattr(self, "map"):
@@ -142,10 +143,10 @@ class ObstacleDetection(Node):
 
         return row, col
 
-    def is_wall(self, coord, thickened_map):
+    def is_wall(self, coord):
         row, col = self.world_to_map_indices(coord[0], coord[1])
 
-        return thickened_map[row, col] == 100
+        return self.thickened_map[row, col] == 100
 
     def get_thickened_map(self, wall_thickness=10):
         walls = self.map == 100
@@ -155,7 +156,6 @@ class ObstacleDetection(Node):
         return np.where(dilated, 100, 0)
 
     def remove_walls(self, obstacles):
-        thickened_map = self.get_thickened_map()
 
         for obs in obstacles:
             if len(obs) == 0:
@@ -164,18 +164,14 @@ class ObstacleDetection(Node):
             for coords in obs:
                 x, y = coords[0], coords[1]
 
-                if self.is_wall((x, y), thickened_map):
+                if self.is_wall((x, y), self.thickened_map):
                     obs.clear()
                     break
 
         return obstacles
 
     def clean_obstacles(self, obstacles, min_size=3):
-        for obs in obstacles:
-            if len(obs) < min_size:
-                obs.clear()
-
-        return obstacles
+        return [obs for obs in obstacles if len(obs) >= min_size]
 
     def publish_markers(self, obstacles, frame_id="map"):
         arr = MarkerArray()
