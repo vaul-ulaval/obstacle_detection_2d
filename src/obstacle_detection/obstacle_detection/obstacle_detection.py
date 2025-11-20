@@ -74,8 +74,6 @@ class ObstacleDetection(Node):
         )[2]
         cos_yaw = np.cos(yaw)
         sin_yaw = np.sin(yaw)
-        
-        print(scan_points_in_robot_frame)
 
         base_link_to_map_tf = np.array([[cos_yaw, -sin_yaw, pose.position.x], [sin_yaw, cos_yaw, pose.position.y], [0, 0, 1]])  # (3,3)
         reference_coords = base_link_to_map_tf @ scan_points_in_robot_frame  # (N,3)
@@ -162,9 +160,7 @@ class ObstacleDetection(Node):
                 continue
 
             for coords in obs:
-                x, y = coords[0], coords[1]
-
-                if self.is_wall((x, y), self.thickened_map):
+                if self.is_wall(coords):
                     obs.clear()
                     break
 
